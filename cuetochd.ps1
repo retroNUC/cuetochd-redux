@@ -6,15 +6,16 @@
 Param([string]$in = "", [string]$out = "")
 Write-Host "In: $in"
 Write-Host "Out: $out"
+Write-Host ""
 
 #Check if the input exists.
-If (!(Test-Path -Path $in)) {
+If (!(Test-Path -LiteralPath $in)) {
     Write-Host "Exiting: $in does not exist."
     Exit 1
 }
 
 #Check if the output exists. Attempt to create it.
-If (!(Test-Path -Path $out)) {
+If (!(Test-Path -LiteralPath $out)) {
     If (!(New-Item -ItemType directory -Path $out)) {
         Write-Host "Exiting: $out does not exist."
         Exit 1
@@ -43,7 +44,7 @@ Function ExtractFiles {
     $7zip.start()
     $7zip.WaitForExit()
 
-    Return (Get-ChildItem -Path $out -Name)
+    Return (Get-ChildItem -LiteralPath $out -Name)
 }
 
 #Convert a CUE to CHD.
@@ -72,10 +73,11 @@ Function Got-Folder {
 #Decide what to do with each file type.
 Function Got-File {
     Param([string]$file, [string]$out)
-    $fileObject = Get-Item $file
+    $fileObject = Get-Item -LiteralPath $file
     $filenoextension = $fileObject.BaseName
     $ext = $fileObject.Extension
     $workfolder = ((Get-Location).ToString() + '\workfolder\' + $filenoextension)
+    
     #If archive
     If ($ext.ToLower() -eq ".rar" -OR $ext.ToLower() -eq ".zip" -OR $ext.ToLower() -eq ".7z") {
         $extractedfiles = ExtractFiles -archive $file  -out $workfolder
@@ -84,22 +86,27 @@ Function Got-File {
                 Route-File -file "$workfolder\$e" -out $out
             }
         }
+	Write-Host ">>> Done with $filenoextension$ext, cleaning up extracted files"
+	Remove-Item -Recurse -LiteralPath $workfolder
     }
-    ElseIf ($ext.ToLower() -eq ".cue") {
+    ElseIf ($ext.ToLower() -eq ".cue" -OR $ext.ToLower() -eq ".gdi") {
+	Write-Host ">>> Processing file: $filenoextension$ext"
+	Write-Host ""
         CUEtoCHD -cuefile "$workfolder\$e" -out $out
+	Write-Host ""
     }
-    ElseIf ($ext.ToLower() -eq ".bin") {
+<#     ElseIf ($ext.ToLower() -eq ".bin") {
         #Skip bin files.
     }
     Else {
-        Write-Host "Skipping $file. We don't know what to do with that type."
-    }
+        Write-Host "Skipping $filenoextension$ext - We don't know what to do with $ext files."
+    } #>
 }
 
 #If folder, send to folder function. If file, send to file function.
 Function Route-File {
     Param([string]$file, [string]$out)
-    If (Test-Path -Path $file -PathType Container) {
+    If (Test-Path -LiteralPath $file -PathType Container) {
         Got-Folder -folder $file -out $out
     }
     Else { # This should probably be an ElseIf (is file)...
@@ -109,4 +116,5 @@ Function Route-File {
 
 #Consider this as Main()
 Route-File -file $in -out $out
+Write-Host ""
 Exit 0
