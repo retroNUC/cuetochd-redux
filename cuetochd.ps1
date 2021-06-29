@@ -64,7 +64,7 @@ Function CUEtoCHD {
 #Spin through all the files in a folder then route them.
 Function Got-Folder {
     Param([string]$folder, [string]$out)
-    $files = Get-ChildItem -Path $folder -Name
+    $files = Get-ChildItem -Path $folder -Name | Sort-Object
     Foreach ($file In $files) {
         Route-File -file "$folder\$file" -out $out
     }
