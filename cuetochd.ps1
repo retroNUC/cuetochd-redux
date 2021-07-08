@@ -89,10 +89,12 @@ Function Got-File {
 	Write-Host ">>> Done with $filenoextension$ext, cleaning up extracted files"
 	Remove-Item -Recurse -LiteralPath $workfolder
     }
+
+    #If actual file
     ElseIf ($ext.ToLower() -eq ".cue" -OR $ext.ToLower() -eq ".iso"-OR $ext.ToLower() -eq ".gdi") {
 	Write-Host ">>> Processing file: $filenoextension$ext"
 	Write-Host ""
-        CUEtoCHD -cuefile "$workfolder\$e" -out $out
+        CUEtoCHD -cuefile "$file" -out $out
 	Write-Host ""
     }
 <#     ElseIf ($ext.ToLower() -eq ".bin") {
